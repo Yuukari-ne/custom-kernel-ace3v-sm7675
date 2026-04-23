@@ -12,7 +12,7 @@
  }
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -1306,6 +1306,12 @@
+@@ -1306,4 +1306,10 @@
  	memcpy(&tmp, utsname(), sizeof(tmp));
  	up_read(&uts_sem);
 +
