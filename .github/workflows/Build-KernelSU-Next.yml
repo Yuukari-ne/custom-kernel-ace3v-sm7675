@@ -76,11 +76,37 @@ jobs:
          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
          sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
          
-      - name: Apply Custom Kernel Name (Stealth Trick)
+      - name: Apply Custom Kernel Name (Stealth Trick via Python)
         run: |
          cd kernel_workspace/kernel_platform/common
-         patch -p1 < ${GITHUB_WORKSPACE}/stealth_name.patch
-         git add -A && git commit -a -m "Applied Stealth Name"
+         python3 -c '
+         import sys
+         
+         # 1. Patch version.c
+         file1 = "fs/proc/version.c"
+         with open(file1, "r") as f:
+             content = f.read()
+         content = content.replace("utsname()->release,", "\"6.1.118-yuukari-ne-perf+-manmbanbu-perf+\",")
+         with open(file1, "w") as f:
+             f.write(content)
+             
+         # 2. Patch sys.c
+         file2 = "kernel/sys.c"
+         with open(file2, "r") as f:
+             content = f.read()
+             
+         target = "if (copy_to_user(name, &tmp, sizeof(tmp)))"
+         injection = """
+         /* FAKE KERNEL NAME FOR NON-ROOT APPS */
+         if (from_kuid_munged(current_user_ns(), current_uid()) != 0) {
+             strlcpy(tmp.release, "6.1.118-yuukari-ne-perf+-manmbanbu-perf+", sizeof(tmp.release));
+         }
+         """
+         content = content.replace(target, injection + "\n\t" + target)
+         with open(file2, "w") as f:
+             f.write(content)
+         '
+         git add -A && git commit -a -m "Applied Stealth Name via Python"
          
       - name: Build kernel
         run: |
