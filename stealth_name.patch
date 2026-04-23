@@ -16,7 +16,6 @@
  	memcpy(&tmp, utsname(), sizeof(tmp));
  	up_read(&uts_sem);
 +
-+	/* FAKE KERNEL NAME FOR NON-ROOT APPS */
 +	if (from_kuid_munged(current_user_ns(), current_uid()) != 0) {
 +		strlcpy(tmp.release, "6.1.118-yuukari-ne-perf+-manmbanbu-perf+", sizeof(tmp.release));
 +	}
